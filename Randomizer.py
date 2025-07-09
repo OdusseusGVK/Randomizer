@@ -5,9 +5,15 @@ import random
 import json
 import os
 from datetime import datetime
+import platform
+
+
+if platform.system() == 'Windows':
+    import winsound
 
 class RandomizerApp:
     SETTINGS_FILE = 'settings.json'
+    HISTORY_FILE = 'history.json'
 
     def __init__(self):
         self.root = tk.Tk()
@@ -15,16 +21,18 @@ class RandomizerApp:
         self.is_dark_theme = False
         self.current_language = 'ru'
         self.history = []
-        self.history_window = None
-        self.text_widget = None
 
         self.load_settings()
+        self.load_history()
+
         self.init_texts()
         self.create_about_window()
         self.create_widgets()
         self.set_theme()
+        self.apply_saved_title()
         self.root.mainloop()
 
+    # --------------------- Настройки и история ---------------------
     def load_settings(self):
         if os.path.exists(self.SETTINGS_FILE):
             try:
@@ -32,21 +40,41 @@ class RandomizerApp:
                     settings = json.load(f)
                 self.is_dark_theme = settings.get('theme', False)
                 self.current_language = settings.get('language', 'ru')
+                self.saved_title = settings.get('title', None)
             except:
-                pass
+                self.saved_title = None
+        else:
+            self.saved_title = None
 
     def save_settings(self):
-        settings = {'theme': self.is_dark_theme, 'language': self.current_language}
+        settings = {
+            'theme': self.is_dark_theme,
+            'language': self.current_language,
+            'title': self.root.title()
+        }
         with open(self.SETTINGS_FILE, 'w', encoding='utf-8') as f:
             json.dump(settings, f)
 
+    def load_history(self):
+        if os.path.exists(self.HISTORY_FILE):
+            try:
+                with open(self.HISTORY_FILE, 'r', encoding='utf-8') as f:
+                    self.history = json.load(f)
+            except:
+                self.history = []
+
+    def save_history(self):
+        with open(self.HISTORY_FILE, 'w', encoding='utf-8') as f:
+            json.dump(self.history, f)
+
+    # --------------------- Тексты ---------------------
     def init_texts(self):
         self.texts = {
             'ru': {
                 'program_title': 'Рандомайзер',
                 'menu': 'Меню',
                 'about': 'О программе',
-                'about_text': 'Версия: 2.0\nСоздатель: OdusseusGVK\nСсылка: нажми на кнопку чтобы перейти',
+                'about_text': 'Версия: 2.1\nСоздатель: OdusseusGVK\nСсылка: нажми на кнопку чтобы перейти',
                 'theme': 'Тема',
                 'switch_theme': 'Переключить тему',
                 'mode': 'Выберите режим:',
@@ -80,7 +108,7 @@ class RandomizerApp:
                 'program_title': 'Randomizer',
                 'menu': 'Menu',
                 'about': 'About',
-                'about_text': 'Version: 2.0\nCreator: OdusseusGVK\nLink: click the button to visit',
+                'about_text': 'Version: 2.1\nCreator: OdusseusGVK\nLink: click the button to visit',
                 'theme': 'Theme',
                 'switch_theme': 'Switch Theme',
                 'mode': 'Choose mode:',
@@ -112,6 +140,10 @@ class RandomizerApp:
             }
         }
 
+    def get_text(self, key):
+        return self.texts[self.current_language][key]
+
+    # --------------------- Окно "О программе" ---------------------
     def create_about_window(self):
         self.about_win = tk.Toplevel(self.root)
         self.about_win.title(self.get_text('about'))
@@ -127,6 +159,7 @@ class RandomizerApp:
         self.profile_button = ttk.Button(self.about_win, text=self.get_text('profile_button_text'), style='About.TButton', command=lambda: webbrowser.open("https://github.com/OdusseusGVK"))
         self.profile_button.pack()
 
+    # --------------------- Основные виджеты ---------------------
     def create_widgets(self):
         self.create_menu()
         self.create_main_interface()
@@ -250,7 +283,12 @@ class RandomizerApp:
             return
         choice = random.SystemRandom().choice(options)
         self.result_label.config(text=f"{self.get_text('winner')} {choice}")
-        # Записываем в историю с вводом
+        # Анимация мигания
+        self.animate_winner_text(choice)
+        # Звук
+        self.play_sound()
+
+        # Запись в историю
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         entered_vars = ', '.join(options)
         history_entry = (
@@ -258,10 +296,11 @@ class RandomizerApp:
             f"{self.get_text('time')}: {now} | {self.get_text('winner')}: {choice}"
         )
         self.add_to_history(history_entry)
+        self.save_history()
         self.reset_button.pack(pady=5)
 
     def create_range_section(self):
-        # Секции диапазона
+        # Диапазон
         self.label_range = ttk.Label(self.range_frame, text=self.get_text('range_label'))
         self.label_range.grid(row=0, column=0, columnspan=2, pady=5)
 
@@ -292,7 +331,11 @@ class RandomizerApp:
             return
         choice = random.SystemRandom().randint(min_val, max_val)
         self.result_label.config(text=f"{self.get_text('number')} {choice}")
-        # Записываем в историю с вводом
+        # Анимация
+        self.animate_winner_text(str(choice))
+        # Звук
+        self.play_sound()
+        # История
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         range_str = (
             f"{self.get_text('range_label')}: {self.get_text('min')} {min_val} "
@@ -303,10 +346,10 @@ class RandomizerApp:
             f"{self.get_text('time')}: {now} | {self.get_text('number')}: {choice}"
         )
         self.add_to_history(history_entry)
+        self.save_history()
         self.reset_button.pack(pady=5)
 
     def reset_all(self):
-        # Очистка форм
         if hasattr(self, 'vars_entries_container'):
             for widget in self.vars_entries_container.winfo_children():
                 widget.destroy()
@@ -318,7 +361,6 @@ class RandomizerApp:
         self.adjust_about_window()
 
     def show_mode(self):
-        # Переключение режимов
         self.vars_frame.pack_forget()
         self.range_frame.pack_forget()
         self.reset_button.pack_forget()
@@ -333,7 +375,6 @@ class RandomizerApp:
         self.history.append(entry)
 
     def show_history(self):
-        # Проверка, есть ли уже окно
         if hasattr(self, 'history_window') and self.history_window and tk.Toplevel.winfo_exists(self.history_window):
             self.history_window.focus()
             self.update_history_style()
@@ -341,7 +382,6 @@ class RandomizerApp:
         self.history_window = tk.Toplevel(self.root)
         self.history_window.title(self.get_text('history_title'))
 
-        # Установка цвета фона окна
         bg = "#2e2e2e" if self.is_dark_theme else "#ffffff"
         fg = "#ffffff" if self.is_dark_theme else "#000000"
         self.history_window.configure(bg=bg)
@@ -355,24 +395,22 @@ class RandomizerApp:
         ttk.Button(self.history_window, text=self.get_text('clear_history'), command=self.clear_history).pack(pady=5)
 
     def update_history_style(self):
-        # Проверка существования окна и виджета
         if hasattr(self, 'history_window') and self.history_window and tk.Toplevel.winfo_exists(self.history_window):
             bg = "#2e2e2e" if self.is_dark_theme else "#ffffff"
             fg = "#ffffff" if self.is_dark_theme else "#000000"
             self.history_window.configure(bg=bg)
             if hasattr(self, 'text_widget') and self.text_widget and self.text_widget.winfo_exists():
                 self.text_widget.configure(bg=bg, fg=fg)
-            # Обновляем стиль всех кнопок внутри окна
             for widget in self.history_window.winfo_children():
                 if isinstance(widget, ttk.Button):
                     widget.configure(style='TButton')
         else:
-            # Если окно закрыто, сбрасываем ссылку
             self.history_window = None
             self.text_widget = None
 
     def clear_history(self):
         self.history.clear()
+        self.save_history()
         if hasattr(self, 'history_window') and self.history_window and tk.Toplevel.winfo_exists(self.history_window):
             self.history_window.destroy()
             self.show_history()
@@ -411,8 +449,6 @@ class RandomizerApp:
         self.about_label.config(text=self.get_text('about_text'))
         self.about_win.title(self.get_text('about'))
         self.profile_button.config(text=self.get_text('profile_button_text'))
-        
-        # Обновляем название окна программы
         self.root.title(self.get_text('program_title'))
 
         # Обновление меню
@@ -454,6 +490,38 @@ class RandomizerApp:
                     widget.configure(style='About.TLabel')
                 elif isinstance(widget, ttk.Button):
                     widget.configure(style='About.TButton')
+
+    def show_about(self):
+        self.about_win.deiconify()
+
+    def apply_saved_title(self):
+        # Устанавливаем сохраненное название
+        if hasattr(self, 'saved_title') and self.saved_title:
+            self.root.title(self.saved_title)
+        else:
+            self.root.title(self.get_text('program_title'))
+
+    # --------------------- Анимация и звук ---------------------
+    def animate_winner_text(self, text):
+        # Простая мигающая анимация текста
+        def blink(count=0):
+            if count >= 6:
+                self.result_label.config(text=f"{self.get_text('winner')} {text}")
+                return
+            current = self.result_label.cget('text')
+            if current == f"{self.get_text('winner')} {text}":
+                self.result_label.config(text='')
+            else:
+                self.result_label.config(text=f"{self.get_text('winner')} {text}")
+            self.root.after(300, blink, count+1)
+        blink()
+
+    def play_sound(self):
+        if platform.system() == 'Windows':
+            winsound.MessageBeep(winsound.MB_OK)
+        else:
+            # Для других ОС можно оставить пустым или использовать другие библиотеки
+            pass
 
     def show_about(self):
         self.about_win.deiconify()
