@@ -74,7 +74,7 @@ class RandomizerApp:
                 'program_title': 'Рандомайзер',
                 'menu': 'Меню',
                 'about': 'О программе',
-                'about_text': 'Версия: 2.1\nСоздатель: OdusseusGVK\nСсылка: нажми на кнопку чтобы перейти',
+                'about_text': 'Версия: 2.2\nСоздатель: OdusseusGVK\nСсылка: нажми на кнопку чтобы перейти',
                 'theme': 'Тема',
                 'switch_theme': 'Переключить тему',
                 'mode': 'Выберите режим:',
@@ -103,12 +103,13 @@ class RandomizerApp:
                 'clear_history': 'Очистить историю',
                 'entered_vars': 'Введенные переменные/диапазоны',
                 'time': 'Время',
+                'variables_not_unique': 'Переменные должны быть уникальными',
             },
             'en': {
                 'program_title': 'Randomizer',
                 'menu': 'Menu',
                 'about': 'About',
-                'about_text': 'Version: 2.1\nCreator: OdusseusGVK\nLink: click the button to visit',
+                'about_text': 'Version: 2.2\nCreator: OdusseusGVK\nLink: click the button to visit',
                 'theme': 'Theme',
                 'switch_theme': 'Switch Theme',
                 'mode': 'Choose mode:',
@@ -137,6 +138,7 @@ class RandomizerApp:
                 'clear_history': 'Clear History',
                 'entered_vars': 'Entered variables/range',
                 'time': 'Time',
+                'variables_not_unique': 'Variables must be unique',
             }
         }
 
@@ -268,9 +270,23 @@ class RandomizerApp:
             entry.grid(row=i, column=1, pady=2)
             self.variable_entries.append(entry)
 
+        # Проверка на уникальность переменных перед выбором
+        def check_unique_variables():
+            vars_list = [e.get().strip() for e in self.variable_entries]
+            if len(vars_list) != len(set(vars_list)):
+                self.result_label.config(text=self.get_text('variables_not_unique'))
+                return False
+            return True
+
+        # Обновление команды кнопки "Выбрать" с проверкой
+        def on_select():
+            if not check_unique_variables():
+                return
+            self.select_variable()
+
         if hasattr(self, 'select_button'):
             self.select_button.destroy()
-        self.select_button = ttk.Button(self.vars_frame, text=self.get_text('select'), command=self.select_variable)
+        self.select_button = ttk.Button(self.vars_frame, text=self.get_text('select'), command=on_select)
         self.select_button.grid(row=4, column=0, columnspan=2, pady=10)
 
         self.reset_button.pack(pady=5)
