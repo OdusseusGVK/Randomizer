@@ -1,14 +1,7 @@
-Русский:
+На русском:
 Описание программы:
+Программа позволяет пользователю выполнять случайный выбор из заданных переменных или диапазонов чисел. В интерфейсе есть два режима: работа с переменными и работа с диапазоном чисел. Пользователь может создавать список переменных, указывать диапазон чисел, и программа выберет случайный элемент или число, отображая результат на экране и добавляя запись в историю выборов. Также доступны функции переключения темы оформления (светлая/тёмная), смены языка интерфейса (русский или английский), просмотра истории и её очистки.
 
-Это программа-рандомайзер, которая помогает выбрать случайный вариант из заданного набора переменных. 
-Пользователь вводит необходимое количество переменных, после чего программа создает соответствующее количество полей для ввода данных. 
-После заполнения переменных нажатием кнопки "Выбрать случайную" программа случайным образом выбирает один из введенных вариантов и отображает его. 
-Также есть возможность сбросить все введенные данные и начать заново.
-
-English:
+In English:
 Program Description:
-This is a randomizer application that helps you select a random option from a set of user-defined variables. 
-The user inputs the desired number of variables, and the program dynamically creates corresponding input fields. 
-After filling in the variables, clicking the "Select Random" button will randomly choose one of the entered options and display it. 
-here is also an option to reset all inputs and start over.
+The program allows users to perform a random selection from specified variables or number ranges. The interface features two modes: working with variables and working with ranges. Users can create a list of variables, specify a number range, and the program will select a random item or number, displaying the result on the screen and adding an entry to the history. Additionally, there are functions to switch themes (light/dark), change the interface language (Russian or English), view the history, and clear it.
